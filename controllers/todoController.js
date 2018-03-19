@@ -35,7 +35,6 @@ module.exports = function(app) {
 		Todo.find({ item: req.params.item.replace(/\-/g, " ").trim() }).remove(
 			(err, data) => {
 				if (err) throw err;
-				console.log(data);
 				res.json(data);
 			}
 		);
