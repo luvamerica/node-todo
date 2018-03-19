@@ -1,28 +1,43 @@
 const bodyParser = require("body-parser");
-const urlencodedParser = bodyParser.urlencoded({ extended: false });
+const mongoose = require("mongoose");
+mongoose.Promise = global.Promise;
+//connect to db
+mongoose.connect(
+	"mongodb://test:test@ds119049.mlab.com:19049/todo-node-robert"
+);
 
-let data = [
-	{ item: "get milk" },
-	{ item: "buy bananas" },
-	{ item: "learn to code" }
-];
+//create schema
+
+let todoSchema = new mongoose.Schema({ item: String });
+
+let Todo = mongoose.model("Todo", todoSchema);
+
+const urlencodedParser = bodyParser.urlencoded({ extended: false });
 
 module.exports = function(app) {
 	app.get("/todo", (req, res) => {
-		res.render("todo", { todos: data });
+		//get data from mongo
+		Todo.find({}, (err, data) => {
+			if (err) throw err;
+			res.render("todo", { todos: data });
+		});
 	});
 
 	app.post("/todo", urlencodedParser, (req, res) => {
-		data = [...data, req.body];
-		res.json(data);
+		//get data from view and post to mongodb
+		let newTodo = Todo(req.body).save((err, data) => {
+			if (err) throw err;
+			res.json(data);
+		});
 	});
 
 	app.delete("/todo/:item", (req, res) => {
-		data = data.filter(todo => {
-			console.log(todo.item);
-			console.log(req.params.item);
-			return !req.params.item.includes(todo.item.replace(/ /g, "-"));
-		});
-		res.json(data);
+		Todo.find({ item: req.params.item.replace(/\-/g, " ").trim() }).remove(
+			(err, data) => {
+				if (err) throw err;
+				console.log(data);
+				res.json(data);
+			}
+		);
 	});
 };
